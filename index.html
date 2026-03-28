@@ -39,7 +39,7 @@ header::after{content:'✨🌟⭐';position:absolute;top:10px;right:10px;font-si
 
 /* ── 탭 ── */
 .nav{display:flex;background:white;margin:10px 12px 0;border-radius:16px;overflow:hidden;box-shadow:var(--shadow);}
-.nav-tab{flex:1;padding:13px 2px;text-align:center;font-size:13px;font-weight:700;cursor:pointer;color:#bbb;border:none;background:transparent;font-family:inherit;transition:all .2s;}
+.nav-tab{flex:1;padding:13px 2px;text-align:center;font-size:13px;font-weight:700;cursor:pointer;color:#bbb;border:none;background:transparent;font-family:inherit;transition:all .2s;position:relative;}
 .nav-tab.active{color:white;}
 .nav-tab[data-t="ov"].active{background:linear-gradient(135deg,#ff8fab,#ffb347);}
 .nav-tab[data-t="0"].active{background:var(--mon);}
@@ -48,6 +48,20 @@ header::after{content:'✨🌟⭐';position:absolute;top:10px;right:10px;font-si
 .nav-tab[data-t="3"].active{background:var(--thu);}
 .nav-tab[data-t="4"].active{background:var(--fri);}
 .nav-tab[data-t="5"].active{background:var(--sat);}
+/* 오늘 요일 탭 강조 */
+.nav-tab.today-tab{color:#333;font-size:15px;}
+.nav-tab.today-tab::after{content:'•';position:absolute;bottom:4px;left:50%;transform:translateX(-50%);font-size:10px;color:#ff8fab;}
+.nav-tab.today-tab.active::after{color:rgba(255,255,255,.7);}
+
+/* 이동 메모 카드 */
+.transit-card{margin:4px 0 4px 66px;background:#fffbf0;border:1.5px dashed #ffd080;border-radius:12px;padding:10px 14px;display:flex;align-items:flex-start;gap:8px;}
+.transit-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+.transit-text{font-size:13px;color:#a07800;font-weight:700;line-height:1.4;flex:1;white-space:pre-wrap;word-break:keep-all;}
+/* 이동 메모 입력 옵션 */
+#transitWrap{display:block;margin-bottom:12px;}
+.transit-inp{width:100%;background:#fffbf0;border:2px solid #ffd080;border-radius:12px;padding:12px 14px;font-size:14px;font-family:inherit;color:#333;outline:none;resize:none;line-height:1.5;min-height:70px;transition:border-color .2s;}
+.transit-inp:focus{border-color:#ffb347;}
+.transit-inp::placeholder{color:#ccc;}
 
 /* ── 범례 ── */
 .legend{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;padding:10px 12px;background:white;margin:8px 12px 0;border-radius:14px;box-shadow:var(--shadow);}
@@ -90,6 +104,7 @@ header::after{content:'✨🌟⭐';position:absolute;top:10px;right:10px;font-si
 .cc-room{font-size:13px;color:#888;margin-top:3px;font-weight:700;}
 .cc-time{font-size:13px;color:#888;margin-top:3px;font-weight:700;}
 .cc-move{margin-top:6px;display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:700;color:#666;background:rgba(255,255,255,.75);padding:4px 10px;border-radius:8px;}
+.cc-transit{margin-top:8px;background:#fffbf0;border:1.5px dashed #ffd080;border-radius:10px;padding:8px 12px;font-size:13px;color:#a07800;font-weight:700;line-height:1.5;}
 .cc-acts{position:absolute;top:10px;right:10px;display:flex;gap:6px;}
 .act-btn{width:32px;height:32px;border-radius:50%;border:none;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
 .act-edit{background:rgba(255,179,71,.25);}
@@ -274,6 +289,10 @@ header::after{content:'✨🌟⭐';position:absolute;top:10px;right:10px;font-si
     <div class="emoji-grid" id="emojiGrid"></div>
     <div class="slbl">어떻게 가요? 🚀</div>
     <div class="move-grid" id="moveGrid"></div>
+    <div id="transitWrap">
+      <div class="slbl">🗺️ 이동 메모 <span style="color:#ccc;font-size:11px;font-weight:400">(선택 · 예: 16:25 삼성타운 앞 셔틀)</span></div>
+      <textarea class="transit-inp" id="inpTransit" placeholder="예) 16:25 삼성타운 앞에서 태권도 셔틀&#10;예) 엄마가 데리러 옴" maxlength="80"></textarea>
+    </div>
     <div class="btn-row">
       <button class="btn btn-cancel" onclick="closeEntry()">취소</button>
       <button class="btn btn-save" id="saveBtn" onclick="saveEntry()">💾 저장!</button>
@@ -383,7 +402,7 @@ function initTime(sh=14,sm=0,eh=15,em=0){
   });
   ['sM','eM'].forEach(id=>{
     const el=document.getElementById(id);el.innerHTML='';
-    for(let m=0;m<60;m+=10){const o=document.createElement('option');o.value=m;o.textContent=pad(m);el.appendChild(o);}
+    for(let m=0;m<60;m+=5){const o=document.createElement('option');o.value=m;o.textContent=pad(m);el.appendChild(o);}
   });
   document.getElementById('sH').value=sh; document.getElementById('sM').value=sm;
   document.getElementById('eH').value=eh; document.getElementById('eM').value=em;
@@ -417,6 +436,7 @@ function cardHTML(en,d,idx){
     ${en.cat==='방과후'&&en.room?`<div class="cc-room">🏫 ${en.room}</div>`:''}
     <div class="cc-time">⏰ ${en.start} ~ ${en.end}</div>
     <div class="cc-move"><span>${mv.em}</span><span>${mv.lb}로 이동해요</span></div>
+    ${en.transit?`<div class="cc-transit">🗺️ ${en.transit.replace(/\n/g,'<br>')}</div>`:''}
     <div class="cc-acts">
       <button class="act-btn act-edit" onclick="openEntry(${d},${idx},true)">✏️</button>
       <button class="act-btn act-del" onclick="delEntry(${d},${idx})">🗑️</button>
@@ -513,6 +533,7 @@ window.openEntry=function(d,idx,edit=false){
   document.getElementById('mSub').textContent=`${DAYS[d]} ${idx+1}번째 일정`;
   document.getElementById('inpName').value=en?.name||'';
   document.getElementById('inpRoom').value=en?.room||'';
+  document.getElementById('inpTransit').value=en?.transit||'';
   sCat=en?.cat||'방과후';sMove=en?.move||'도보';sEmoji=en?.emoji||'🎨';
   document.querySelectorAll('.cat-btn').forEach(b=>b.classList.remove('sel'));
   document.querySelector(`.cat-btn[data-c="${sCat}"]`).classList.add('sel');
@@ -535,6 +556,7 @@ window.saveEntry=function(){
   const entry={
     name,cat:sCat,move:sMove,emoji:sEmoji,
     room:sCat==='방과후'?document.getElementById('inpRoom').value.trim():'',
+    transit:document.getElementById('inpTransit').value.trim(),
     start:`${pad(+document.getElementById('sH').value)}:${pad(+document.getElementById('sM').value)}`,
     end:`${pad(+document.getElementById('eH').value)}:${pad(+document.getElementById('eM').value)}`,
   };
@@ -622,6 +644,14 @@ try{
   if(c){appData=JSON.parse(c);if(o)ownerName=o;}
 }catch(e){}
 updateName();renderAll();switchTab('ov');
+
+// 오늘 요일 탭 강조
+if(todayIdx>=0&&todayIdx<=5){
+  document.querySelector(`.nav-tab[data-t="${todayIdx}"]`)?.classList.add('today-tab');
+  const ovHeaders=document.querySelectorAll('.ov-dh');
+  const th=ovHeaders[todayIdx+1];
+  if(th){th.style.cssText+=`;background:${DCOLOR[todayIdx]};color:white;border-radius:8px;font-size:15px;`;}
+}
 
 // 2. Firebase 실시간 수신 (백그라운드)
 onValue(dataRef,snap=>{
